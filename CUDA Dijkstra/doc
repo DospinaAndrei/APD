@@ -6,9 +6,13 @@ Dijkstra’s algorithm overview
 
 
 Dijkstra’s algorithm is inherently sequential and solves SSSP problem in time. In Dijkstra’s algorithm, nodes are divided into two categories: settled and unsettled, settled nodes are those nodes having minimum node weight and whose outgoing edges are relaxed while unsettled nodes may be unreachable nodes i.e. Node weight = ∞ or nodes not having minimum node weight. Initially s is settled and its outgoing edges (s, u) are relaxed. In next iteration, node u having minimum node weight is settled and its outgoing edges (u, w) are relaxed. This procedure is repeated until all the nodes come to settled state.
+
 Parallel Dijkstra’s algorithm
+
 In parallel implementation, number of threads is equal to number of edges in the graph. For each unsettled node, its outgoing edges are relaxed in parallel in order to reduce computation time. Initially, cost i.e. node weight of all the vertices is initialised to ‘∞’ and mask is set to ‘0’, except for the start node whose cost is initialised to ‘0’ and mask value is set to ‘1’. Each time, from a settled node, we relax all unsettled nodes outgoing from settled node i.e. minimum cost is set for each unsettled node and then, threshold value ‘minimum’ is updated with minimum cost among all unsettled nodes.
+
 Input
+
 Graph format
  Number of edges
  Number of vertices
