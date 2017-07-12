@@ -1,75 +1,88 @@
+//Utilizați MPI_Broadcast pentru trimiterea matricei.
+//Dacă elementul este găsit, imprimați maximul Indice de poziție. 
+//Pentru a calcula poziția maximă, trebuie să utilizați MPI_Reduce.
 
-#include "mpi.h"
-#include <time.h>
+//se imparte dimensiunea array-ului la procese si fiecare analizeaza numarul. apoi il afiseaza si imprima unde a fost 
+//gasit ultima data numarul respectiv, iar daca nu gaseste nimic procesul respectiv afiseaza 0.
+
+//array MPI Reduce and Broadcast
+
 #include <iostream>
+#include <mpi.h>
+#include <math.h>
+
 using namespace std;
 
-#define SIZE 12
-#define NR 3
+#define MAXSIZE 10   //dimensiune array
 
 int main(int argc, char *argv[])
 {
-	int rank, numProcs, piece, index;
-	int array[SIZE], segment[SIZE], found[SIZE], finalFound[SIZE + 10];
-	bool display = false;
+	int  my_rank;       /* rank of process */
+	int  nrProcesses;   /* number of processes */
 
-	srand((unsigned int)time(NULL));
+	int arr[MAXSIZE], i, parte, low, high, myresult = 0, result;
+	int pozitie = 0;
+	int nrcautat = 3;
 
-	MPI_Init(&argc, &argv);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-	piece = SIZE / numProcs;
-	if (SIZE % numProcs != 0)
-		++piece;
+	MPI_Init(&argc, &argv); /*START MPI */
 
-	MPI_Barrier(MPI_COMM_WORLD);
+							/*Stabilește dimensiunea grupului asociat unui comunicator(cate procese sa imi fie lansate)*/
+	MPI_Comm_size(MPI_COMM_WORLD, &nrProcesses);
 
-	if (rank == 0)
-	{
-		cout << "Array elements are:\n";
-		for (int i = 0; i < SIZE; i++)
-		{
-			array[i] = rand() % 5;
-			cout << array[i] << " ";
-			finalFound[i] = -1;
+	/*Stabilește rangul procesului de apelare în comunicator || Rangul procesului curent*/
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+
+	if (0 == my_rank) {   //radacina imi aduna numerele pt matrice
+		cout << "Enter Array Elements : ";
+		for (i = 0; i<MAXSIZE; i++) {
+			cin >> arr[i];
 		}
 	}
-	//trimite bucati egale de date de la root catre toate procesele din com
-	MPI_Scatter(array, piece, MPI_INT, segment, piece, MPI_INT, 0, MPI_COMM_WORLD);
-	cout << "\n\nRank " << rank << " Piece size: " << piece << "\n";
 
-	for (int i = 0; i < piece; i++)
-		found[i] = -1;
+	/* broadcast data */
+	//trimite vectorul de la procesul root la toate celelalte procese
+	//arr – data to be sent
+	//MAXSIZE – size of the data buffer
+	//MPI_INT – mpi data type
+	//0 – sender
+	//MPI_COMM_WORLD – communicator
+	MPI_Bcast(arr, MAXSIZE, MPI_INT, 0, MPI_COMM_WORLD);
 
-	index = 0;
-	for (int i = 0; i < piece; i++)
-	{
-		if (segment[i] == NR)
-		{
-			found[++index] = i + rank * piece;
+	/* search the number in portion of data */
+	parte = MAXSIZE / nrProcesses; /* must be an integer */
+	low = my_rank * parte;
+	high = low + parte;
+	for (i = low; i<high; i++) {   //imi cauta nr in array
+		if (nrcautat == arr[i]) {
+			pozitie = i;
 		}
 	}
-	//ia  rez de la toate procesele si le pune in vectorul finalFound
-	MPI_Gather(found, piece, MPI_INT, finalFound, piece, MPI_INT, 0, MPI_COMM_WORLD);
+	cout << "I got pozition " << pozitie << " from " << my_rank << "\n";
 
-	if (rank == 0)
-	{
-		for (int i = 0; i < SIZE + 10; i++)
+	/* compute global MAX */
+	/*pozitie - address of the send buffer
+	1 - number of elements in send buffer
+	MPI_INT- data type of elements of send buffer
+	MPI_MAX - reduce operation
+	0 - rank of root process
+	MPI_COMM_WORLD– communicator
+	result - address of the receive buffer*/
+	MPI_Reduce(&pozitie, &result, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+	if (0 == my_rank) {
+		if (result == 0)
 		{
-			if (finalFound[i] >= 0)
-			{
-				if (!display)
-					cout << "\n\nNumber found on the follwing position(s): \n";
-				display = true;
-				cout << finalFound[i] << " ";
-			}
+			cout << "Number NOT found..!!\n";
 		}
-		if (!display)
-			cout << "\n\nNumber not found.";
+		else {
+			cout << "Number FOUND at MAX position " << result << "\n";
+		}
 	}
 
-	MPI_Finalize();
-	cout << endl;
+
+	MPI_Finalize(); /* EXIT MPI */
+
 	return 0;
 }
