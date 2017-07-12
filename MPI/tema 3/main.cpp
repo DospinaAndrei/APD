@@ -1,81 +1,71 @@
-#include "mpi.h"
-#include <time.h>
+//Utilizați scatter pentru a trimite matrice. 
+//Dacă elementul este găsit de mai multe ori, imprimați toate pozițiile sale.
+//Utilizați MPI_Gather pentru trimiterea înapoi a pozițiilor.
+
+/* daca numarul ementelor se imparte exact la nr de procese(4) trimite la fiecare proces dimensiunea pe care o are de caluclat
+ cu Scatter  trimit de la radacina la toate procesele o parte egala pe care o prelucreaza si o afiseaza
+ cu gather adun informatiile si calculez unde am gasit nr cautat apoi ii afisez pozitita
+
+
+*/
+
+//array MPI_Scatter and MPI_Gather
+
 #include <iostream>
+#include "mpi.h"
+
 using namespace std;
 
-#define SIZE 12
-#define NR 0
-
+#define SIZE 4  
+#define N 16 
 int main(int argc, char *argv[])
 {
-	int rank, nrProcs, slice, indexVpoz;
-	int array[SIZE], segment[SIZE], Vpoz[SIZE], finalFound[SIZE];
-	bool display = false;
-
-	srand((unsigned int)time(NULL));
+	int numprocs, rank, sendcount, recvcount;
+	int buf[N] = { 3,5,3,4,7,3,8,6,8,7,6,8,5,3,1,2 };
+	int recvbuf[20];
+	int poz[N], nrcautat = 3;
+	int j = 0;
+	int rezultat[20];
+	int low = 0;
+	int high = 0;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &nrProcs);
+	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 
-	slice = SIZE / nrProcs;
 
-	//avem grija ca toate bucatile sa fie egale
-	if (SIZE % nrProcs != 0)
-		++slice;
-	//blocheaza procesul curent pana cand toate celelalte procese din communicator isi termina rutina
-	MPI_Barrier(MPI_COMM_WORLD);
-	
-	//initializeaza array 
-	if (rank == 0)
-	{
-		cout << "Array elements are:\n";
-		for (int i = 0; i < SIZE; i++)
-		{
-			array[i] = rand() % 5;
-			cout << array[i] << " ";
-			finalFound[i] = -1;
-		}
-		//cout << "Searched number is: ";
-		//cin >> NR;
-		//cout << "\n";
-	}
-	//trimite seg egale de date de la root catre celelalte proc din communicator
-	MPI_Scatter(array, slice, MPI_INT, segment, slice, MPI_INT, 0, MPI_COMM_WORLD);
-	cout << "\n\nRank: " << rank << ". Segement size: " << slice << "\n";
-	//initializare 
-	for (int i = 0; i < slice; i++)
-		Vpoz[i] = -1;
+	if (N%numprocs != 0) {
+		cout << "Numarul dat nu se imparte exact la numarul de procese!!" << endl;
+		MPI_Finalize();
+		exit(0);
+	}	sendcount = N / numprocs;
+	recvcount = N / numprocs;
+	MPI_Scatter(buf, sendcount, MPI_INT, recvbuf, recvcount, MPI_INT, 0, MPI_COMM_WORLD); //trimit cate o parte egala din vector la fiecare proces arr->recvbuf
+	printf("Procesul %d : %d %d %d %d \n ", rank, recvbuf[0], recvbuf[1], recvbuf[2], recvbuf[3]);
 
-	indexVpoz = 0;
-	for (int i = 0; i < slice; i++)
-	{
-		if (segment[i] == NR)
-		{
-			Vpoz[++indexVpoz] = i + rank * slice;
+
+	for (int i = 0; i<recvcount; i++) {
+		if (nrcautat == recvbuf[i]) {
+			poz[j] = i + (N / numprocs)*rank;
+			cout << "ID PROCES " << rank << " Pozitia: " << i + (N / numprocs)*rank << endl; //imi afiseaza unde a gasit numarul si ce proces
+			j++;
 		}
 	}
-	//reuneste toate pozitiile in vect finalFound prin intermediul Gather
-	MPI_Gather(Vpoz, slice, MPI_INT, finalFound, slice, MPI_INT, 0, MPI_COMM_WORLD);
 
-	if (rank == 0)
-	{
-		for (int i = 0; i < SIZE ; i++)
-		{
-			if (finalFound[i] >= 0)
-			{
-				if (!display)
-					cout << "\n\nNumber found on the follwing position(s): \n";
-				display = true;
-				cout << finalFound[i] << " ";
-			}
+	MPI_Gather(poz, SIZE, MPI_INT, rezultat, SIZE, MPI_INT, 0, MPI_COMM_WORLD);//procesul o aduna toate datele te la toate procesele si le pune intr-un vector
+
+																			   //if(rank==0){
+	if (j != NULL) {
+		cout << "Pozitile pe care am gasit numarul in procesul " << rank << " sunt: ";
+		for (int i = 0;i<j;i++) {
+			cout << poz[i] << "  ";
 		}
-		if (!display)
-			cout << "\n\nNumber not found.";
 	}
-	
+	else
+		cout << "Number not found!";
+	//}
+
 	MPI_Finalize();
-	cout << endl;
-	system("pause");
+
 	return 0;
 }
