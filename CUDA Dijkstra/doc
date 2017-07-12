@@ -1,0 +1,62 @@
+
+Dijkstra Algorithm on Cuda
+
+
+Dijkstra’s algorithm overview
+
+
+Dijkstra’s algorithm is inherently sequential and solves SSSP problem in time. In Dijkstra’s algorithm, nodes are divided into two categories: settled and unsettled, settled nodes are those nodes having minimum node weight and whose outgoing edges are relaxed while unsettled nodes may be unreachable nodes i.e. Node weight = ∞ or nodes not having minimum node weight. Initially s is settled and its outgoing edges (s, u) are relaxed. In next iteration, node u having minimum node weight is settled and its outgoing edges (u, w) are relaxed. This procedure is repeated until all the nodes come to settled state.
+Parallel Dijkstra’s algorithm
+In parallel implementation, number of threads is equal to number of edges in the graph. For each unsettled node, its outgoing edges are relaxed in parallel in order to reduce computation time. Initially, cost i.e. node weight of all the vertices is initialised to ‘∞’ and mask is set to ‘0’, except for the start node whose cost is initialised to ‘0’ and mask value is set to ‘1’. Each time, from a settled node, we relax all unsettled nodes outgoing from settled node i.e. minimum cost is set for each unsettled node and then, threshold value ‘minimum’ is updated with minimum cost among all unsettled nodes.
+Input
+Graph format
+ Number of edges
+ Number of vertices
+ Source
+ Start_Vertex  End_Vertex  Weight
+……
+……
+Sample Input file
+9
+28
+0
+0 1 4
+0 7 8
+1 2 8
+1 7 11
+1 0 4
+2 1 8
+2 3 7
+2 5 4
+2 8 2
+3 2 7
+3 4 9
+3 5 14
+4 3 9
+4 5 10
+5 2 4
+5 3 14
+5 4 10
+5 6 2
+6 5 2
+6 8 6
+6 7 1
+7 0 8
+7 1 11
+7 6 1
+7 8 7
+8 2 2
+8 6 6
+8 7 7
+
+Output file
+0) cost:0
+1) cost:4
+2) cost:12
+3) cost:19
+4) cost:21
+5) cost:11
+6) cost:9
+7) cost:8
+8) cost:14
+ 
