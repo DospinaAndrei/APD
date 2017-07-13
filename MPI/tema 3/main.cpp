@@ -1,13 +1,3 @@
-//Utilizați scatter pentru a trimite matrice. 
-//Dacă elementul este găsit de mai multe ori, imprimați toate pozițiile sale.
-//Utilizați MPI_Gather pentru trimiterea înapoi a pozițiilor.
-
-/* daca numarul ementelor se imparte exact la nr de procese(4) trimite la fiecare proces dimensiunea pe care o are de caluclat
- cu Scatter  trimit de la radacina la toate procesele o parte egala pe care o prelucreaza si o afiseaza
- cu gather adun informatiile si calculez unde am gasit nr cautat apoi ii afisez pozitita
-
-
-*/
 
 //array MPI_Scatter and MPI_Gather
 
@@ -40,19 +30,19 @@ int main(int argc, char *argv[])
 		exit(0);
 	}	sendcount = N / numprocs;
 	recvcount = N / numprocs;
-	MPI_Scatter(buf, sendcount, MPI_INT, recvbuf, recvcount, MPI_INT, 0, MPI_COMM_WORLD); //trimit cate o parte egala din vector la fiecare proces arr->recvbuf
+	MPI_Scatter(buf, sendcount, MPI_INT, recvbuf, recvcount, MPI_INT, 0, MPI_COMM_WORLD);
 	printf("Procesul %d : %d %d %d %d \n ", rank, recvbuf[0], recvbuf[1], recvbuf[2], recvbuf[3]);
 
 
 	for (int i = 0; i<recvcount; i++) {
 		if (nrcautat == recvbuf[i]) {
 			poz[j] = i + (N / numprocs)*rank;
-			cout << "ID PROCES " << rank << " Pozitia: " << i + (N / numprocs)*rank << endl; //imi afiseaza unde a gasit numarul si ce proces
+			cout << "ID PROCES " << rank << " Pozitia: " << i + (N / numprocs)*rank << endl; 
 			j++;
 		}
 	}
 
-	MPI_Gather(poz, SIZE, MPI_INT, rezultat, SIZE, MPI_INT, 0, MPI_COMM_WORLD);//procesul o aduna toate datele te la toate procesele si le pune intr-un vector
+	MPI_Gather(poz, SIZE, MPI_INT, rezultat, SIZE, MPI_INT, 0, MPI_COMM_WORLD);
 
 																			   //if(rank==0){
 	if (j != NULL) {
